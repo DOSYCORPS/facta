@@ -1,0 +1,2 @@
+cp node_modules/big-integer/BigInteger.min.js public/
+cp node_modules/brutalist-web/r.js public/
