@@ -1,6 +1,6 @@
 {
   "name": "facta",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Sudoku-like integer factoring game",
   "main": "server.js",
   "scripts": {
