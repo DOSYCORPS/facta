@@ -1,4 +1,5 @@
 "use strict";
+import math from './math.js';
 import {promisify} from './utils.js';
 {
   const PRIME_OPTS = {
