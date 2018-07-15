@@ -56,7 +56,17 @@
     return map;
   }, {});
 
-  // isn't it pretty? :)
+  const units_by_ten = tens.reduce(
+    (map,t) => (map[t] = Object.keys(products_by_ten[t]).map(p => p.slice(1)).sort(num),map),
+    {}
+  );
+  const tens_by_unit = units.reduce( 
+    (map,u) => (map[u] = Object.keys(products_by_unit[u]).map(p => p.slice(0,1)).sort(num),map),
+    {}
+  );
+
+  //console.log(JSON.stringify(units_by_ten,null,2));
+  //console.log(JSON.stringify(tens_by_unit,null,2));
   //console.log(JSON.stringify(products,null,2),Object.keys(products).length);
   //console.log(JSON.stringify(products_by_unit,null,2));
   //console.log(JSON.stringify(products_by_ten,null,2));
@@ -71,6 +81,8 @@
     return out;
   }
 
+  function num(a,b) { return a-b; }
+
 export default {
   products: {
     all: products,
@@ -81,5 +93,12 @@ export default {
   sources: {
     by_product: products  
   },
-  units, tens
+  units: {
+    all: units, 
+    by_ten: units_by_ten
+  },
+  tens: {
+    all: tens,
+    by_unit: tens_by_unit
+  }
 };

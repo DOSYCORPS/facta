@@ -1,6 +1,7 @@
 "use strict";
 import math from './math.js';
 import {promisify} from './utils.js';
+import ui from './ui.js';
 {
   const PRIME_OPTS = {
     algorithm: {
@@ -11,10 +12,10 @@ import {promisify} from './utils.js';
   const makePrime = promisify((bits,cb) => forge.prime.generateProbablePrime(bits,PRIME_OPTS,cb));
 
   onload = () => newGame();
+  Object.assign(self,{ui});
 
   async function newGame() {
     const problem = await newProblem(128);
-    console.log( problem );
     render(Game(), document.querySelector('main'));
   }
 
@@ -32,9 +33,7 @@ import {promisify} from './utils.js';
 
   function Game() {
     return R`
-      <table>
-       OK 
-      </table>
+      ${ui.cell({})}
     `;
   }
 }

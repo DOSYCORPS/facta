@@ -1,5 +1,9 @@
 "use strict";
 
+
+  // Export the public API
+    export {promisify,undfd,defd};
+
   //Promisify 
 
     function promisify(original) {
@@ -26,7 +30,15 @@
       };
     }
 
-  // Export the public API
-    export {promisify};
+  // undefined or defined 
+
+    function defd(v) {
+      return !undfd(v);
+    }
+
+    function undfd(v) {
+      return v === null || v === undefined || v == "";
+    }
+ 
 
 
