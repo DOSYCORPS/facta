@@ -1,24 +1,73 @@
-'use strict';
 {
   const XSS = 'Possible XSS attack warning. Possible object forgery attempt detected. Codes do not match.',
     OBJ = 'Object properties don\'t work here.',
     LAST_ATTR_NAME = /\s+([\w-]+)\s*=\s*"?\s*$/,
     NEW_TAG = /<[\w]+/,
-    currentKey = Math.random()+'';
+    currentKey = Math.random()+'',
+    domCache = {};
 
-  Object.assign(self,{R,render});
+  class Brute {
+    constructor(props) {
+      props = Object.freeze(props);
+      const state = Object.assign({},props);
+      const pin = 'pin' + Math.random();
+      Object.assign(this, {pin,props,state});
+    }
+
+    setState(newState) {
+      switch( typeof newState ) {
+        case "function":
+          this.setState(newState(Object.freeze(Object.assign({},this.state)),this.props));
+          break;
+        case "object":
+          Object.assign(this.state,newState);
+          break;
+        default:
+          this.state = newState;
+          break;
+      }
+      render(this,domCache[this.pin],{replace:true});
+    }
+
+    render() {
+      return R``;
+    }
+  }
+
+  /**
+    Crude example of pinning
+    Use with stateful components
+    First time must call render with actual location
+    Thereafter that location is set as pinned
+    Can we replace this first time requirement with
+    say we want to include x inside an R template? 
+    Can we extend pinning to regular 'non-component' brutal / r functions?
+  **/
+
+
+  Object.assign(self,{R,render,Brute,domCache});
+
 
   function R (parts, ...vals) {
     parts = [...parts];
     const handlers = {};
+    const pinned = [];
     vals = vals.map(v => {
       if (Array.isArray(v) && v.every(item => !!item.handlers && !!item.str)) {
         return join(v) || '';
       } else if (typeof v === 'object' && !!v) {
         if (!!v.str && !!v.handlers) {
           return verify(v,currentKey) && v;
+        } else if (v instanceof Brute) {
+          const {pin} = v;
+          v = v.render();
+          v.pin = pin;
+          verify(v,currentKey);
+          pinned.push(v);
+          domCache[v.pin] = undefined;
+          return R`<span data-pin=${v.pin}></span>`;
         }
-        throw {'error': OBJ, 'value': v};
+        throw {error: OBJ, value: v};
       } else return v === null || v === undefined ? '' : v;
     });
     let hid,
@@ -43,7 +92,7 @@
           hidSaved = true;
           str += ` data-hid="${hid}"`;
         }
-        handlers[hid].push({'eventName': attrName, 'handler': val});
+        handlers[hid].push({eventName: attrName, handler: val});
       } else if (!!val && !!val.handlers && !!val.str) {
         Object.assign(handlers,val.handlers);
         str += part;
@@ -56,18 +105,50 @@
       }
     }
     str += parts.shift();
-    const o = {str,handlers};
+    const o = {str,handlers,pinned};
     o.code = sign(o,currentKey);
     return o;
   }
 
-  function render (r, root, {'replace': replace = false} = {}) {
+  function render (r, root, {replace: replace = false} = {}) {
+    if (r instanceof Brute) {
+      const {pin} = r;
+      r = r.render();
+      r.pin = pin;
+    }
     if (Array.isArray(r) && r.every(val => !!val.str && !!val.handlers)) r = join(r);
     verify(r,currentKey);
-    const {str,handlers} = r;
+    const {str,handlers,pinned} = r;
+    const newPinNodes = [];
     if (replace) {
-      root.insertAdjacentHTML('beforeBegin', str);
-      root.remove();
+      const frag = df(str);
+      let pinNodes = domCache[r.pin];
+      if ( !Array.isArray(pinNodes) ) {
+        pinNodes = domCache[r.pin] = [];
+      }
+      if ( pinNodes.length ) {
+        pinNodes.forEach( rootset => {
+          const cloneFrag = frag.cloneNode(true);
+          newPinNodes.push(Array.from(cloneFrag.childNodes));
+          rootset[0].parentElement.insertBefore(cloneFrag,rootset[0]);
+          rootset.forEach( el => el.remove() );
+        });
+      } else {
+        if ( Array.isArray(root) ) {
+          root.forEach( rootset => {
+            const cloneFrag = frag.cloneNode(true);
+            newPinNodes.push(Array.from(cloneFrag.childNodes));
+            rootset[0].parentElement.insertBefore(cloneFrag,rootset[0]);
+            rootset.forEach( el => el.remove() );
+          });
+        } else if (!!root) {
+          const cloneFrag = frag.cloneNode(true);
+          newPinNodes.push(Array.from(cloneFrag.childNodes));
+          root.parentElement.insertBefore(cloneFrag,root);
+          root.remove();
+        }
+      }
+      domCache[r.pin] = newPinNodes;
     } else {
       root.innerHTML = '';
       root.insertAdjacentHTML('afterBegin', str);
@@ -78,8 +159,16 @@
 
       if (!!node && !!nodeHandlers) {
         nodeHandlers.forEach(({eventName,handler}) => node.addEventListener(eventName,handler));
-      } else throw {'error': `Node or handlers could not be found for ${hid}`, hid};
+      } else throw {error: `Node or handlers could not be found for ${hid}`, hid};
     });
+    pinned.forEach( v => {
+      const locations = Array.from(document.querySelectorAll(`[data-pin="${v.pin}"]`));
+      render(v,locations.map(x => [x]), {replace:true});
+    });
+  }
+
+  function df( t ) {
+    return (new DOMParser).parseFromString(`<template>${t}</template>`,"text/html").head.firstElementChild.content;
   }
 
   function join (rs) {
@@ -105,7 +194,7 @@
 
   function verify ({str,handlers,code},key) {
     if (sign({str,handlers},key) === code) return true;
-    throw {'error': XSS};
+    throw {error: XSS};
   }
 
   function hash (key = '', str) {

@@ -19,5 +19,8 @@ Then visit:
 
 [Go to facta.com](https://facta.com)
 
+## implementation notes
+
+Note this is using the  v-1.2-components-pinning branch of brutal.js for reasons practical (it may work to have that functionality) and testing / development (I'm actively testing / developing the  v-1.2-components-pinning branch).
 
 
