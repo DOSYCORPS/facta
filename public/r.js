@@ -54,7 +54,7 @@
     const pinned = [];
     vals = vals.map(v => {
       if (Array.isArray(v) && v.every(item => !!item.handlers && !!item.str)) {
-        return join(v) || '';
+        return join(v,pinned) || '';
       } else if (typeof v === 'object' && !!v) {
         if (!!v.str && !!v.handlers) {
           return verify(v,currentKey) && v;
@@ -171,14 +171,15 @@
     return (new DOMParser).parseFromString(`<template>${t}</template>`,"text/html").head.firstElementChild.content;
   }
 
-  function join (rs) {
+  function join (rs,allPinned) {
     const H = {},
-      str = rs.map(({str,handlers,code}) => (
-        verify({str,handlers,code},currentKey),Object.assign(H,handlers),str)).join('\n');
+      str = rs.map(({str,handlers,code,pinned}) => (
+        verify({str,handlers,code},currentKey),Object.assign(H,handlers),allPinned.push(...pinned),str)).join('\n');
 
     if (str) {
-      const o = {str,'handlers': H};
+      const o = {str,handlers:H};
       o.code = sign(o,currentKey);
+      o.pinned = allPinned;
       return o;
     }
   }

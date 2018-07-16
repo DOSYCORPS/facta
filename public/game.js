@@ -14,9 +14,52 @@ import ui from './ui.js';
   onload = () => newGame();
   Object.assign(self,{ui});
 
+  function row(label,{pi,q}) {
+    return R`<tr>
+      ${label}
+      ${q.map( qj => {
+        const cij = pi*qj; 
+        return R`<td>${new ui.Cell()}</td>`
+      })}
+    </tr>`;
+  }
+
+  class Table extends Brute {
+    constructor(problem) {
+      super(problem);
+      const {p,q,n} = problem;
+      // one extra for the p and q
+      const matrixRows = p.length + 1; 
+      const matrixColumns = q.length + 1;
+      Object.assign(this, {p,q,n,matrixRows,matrixColumns});
+    }
+    render() {
+      const p = this.p.split('');
+      p.reverse();
+      const q= this.q.split('');
+      const FirstRow = R`<tr><td></td>${
+        q.map( qi => R`<td><em>${qi}</em></td>` )
+      }</tr>`;
+      const Rows = [FirstRow];
+      for( let i = 1; i < this.matrixRows; i++ ) {
+        const pi = p[i-1];
+        const RowLabel = R`<td><em>${pi}</em></td>`;
+        const rowi = row(RowLabel,{pi,q});
+        Rows.push(rowi);
+      }
+      return R`
+        <table>
+          <tbody>
+            ${Rows}
+          </tbody>
+        </table>
+      `;}
+  }
+
   async function newGame() {
-    const problem = await newProblem(128);
-    render(Game(), document.querySelector('main'));
+    const problem = await newProblem(35);
+
+    render(Game(problem), document.querySelector('main'));
   }
 
   async function newPrimes(bits) {
@@ -31,9 +74,11 @@ import ui from './ui.js';
     return {p,q,n};
   }
 
-  function Game() {
+  function Game(problem) {
     return R`
-      ${ui.cell({})}
+      <article>
+        ${new Table(problem)}
+      </article>
     `;
   }
 }
