@@ -1,0 +1,43 @@
+:root {
+  font-size: 12px;
+}
+table {
+  transform:rotate(45deg);
+  border-spacing: 1rem;
+  margin: 0 auto;
+}
+.cell, 
+.cell > * {
+  display: inline-block;
+}
+.cell {
+  width: 3rem;
+  font-size: 0;
+}
+.cell > * {
+  font-size: 1rem;
+}
+.cell > select {
+  width: 1.5rem;
+  font-size: 1rem;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: right;
+  text-align-last: right;
+}
+.cell > a ,
+.cell > button {
+  width: 3rem;
+  user-select: none;
+  font-size: 0.5rem;
+  line-height: 0.5rem;
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+.cell > a {
+  text-align: left;
+}
+td {
+  transform: rotate(-45deg);
+}

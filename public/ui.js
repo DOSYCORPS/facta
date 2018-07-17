@@ -27,7 +27,11 @@ class Cell extends Brute {
   }
   render() {
     return R`
-      <span>
+      <span class=cell>
+        <button name=reset click=${e => this.reset(e)}>X</button>
+        <br>
+        <a href=#/some-info>Some info</a>
+        <br>
         <select name=ten change=${e => this.redraw(e)}>
           <option value="" selected>
           ${this.state.tens.map(v => R`<option${v==this.state.ten?' selected':''}>${v}`)}
@@ -36,7 +40,6 @@ class Cell extends Brute {
           <option value="" selected>
           ${this.state.units.map(v => R`<option${v==this.state.unit?' selected':''}>${v}`)}
         </select>
-        <button name=reset click=${e => this.reset(e)}>Reset</button>
       </span>
     `;
   }
