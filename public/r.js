@@ -154,6 +154,9 @@
       root.insertAdjacentHTML('afterBegin', str);
     }
     Object.keys(handlers).forEach(hid => {
+      // again could be optimized
+      // doing the qs takes a long time
+      // it may be be better to prefill these node values somehow
       const node = document.querySelector(`[data-hid="${hid}"]`),
         nodeHandlers = handlers[hid];
 
@@ -162,6 +165,9 @@
       } else throw {error: `Node or handlers could not be found for ${hid}`, hid};
     });
     pinned.forEach( v => {
+      // could be optimized
+      // build pinned from the nodes already 
+      // since qsa takes a while
       const locations = Array.from(document.querySelectorAll(`[data-pin="${v.pin}"]`));
       render(v,locations.map(x => [x]), {replace:true});
     });
