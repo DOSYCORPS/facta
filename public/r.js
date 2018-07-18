@@ -64,11 +64,7 @@
   **/
 
 
-  Object.assign(self,{R,render,Brute,domCache,debug:{}});
-
-  function isVoid(name) {
-    return VOID_ELEMENTS.has(name);
-  }
+  Object.assign(self,{R,render,Brute});
 
   function R (parts, ...vals) {
     parts = [...parts];
@@ -185,6 +181,7 @@
       root.innerHTML = '';
       root.insertAdjacentHTML('afterBegin', str);
     }
+
     const remove = [];
     Object.keys(handlers).forEach(hid => {
       const hidNode = document.getElementById(hid),
@@ -200,17 +197,14 @@
       } else throw {error: `Node or handlers could not be found for ${hid}`, hid};
     });
     remove.forEach( n => n.remove() );
+
     for( const v of pinned ) {
       const locations = [...document.getElementsByTagName(`span-${v.pin}`)].map(x => [x]);
-      render(v,locations, {replace:true});
+      render(v,locations,{replace:true});
     };
   }
 
-  function df( t ) {
-    return (new DOMParser).parseFromString(`<template>${t}</template>`,"text/html").head.firstElementChild.content;
-  }
-
-  function join (rs,allPinned) {
+  function join (rs,allPinned = []) {
     const H = {},
       str = rs.map(({str,handlers,code,pinned}) => (
         verify({str,handlers,code},currentKey),Object.assign(H,handlers),allPinned.push(...pinned),str)).join('\n');
@@ -225,6 +219,10 @@
 
   function safe (v) {
     return String(v).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/&/g,'&amp;').replace(/"/g,'&#34;').replace(/'/g,'&#39;');
+  }
+
+  function df( t ) {
+    return (new DOMParser).parseFromString(`<template>${t}</template>`,"text/html").head.firstElementChild.content;
   }
 
   function sign ({str,handlers},key) {
@@ -266,4 +264,9 @@
   function bytes (str) {
     return [...str].reduce((b,s) => (b.push(...symbytes(s)), b),[]);
   }
+
+  function isVoid(name) {
+    return VOID_ELEMENTS.has(name);
+  }
+
 }
