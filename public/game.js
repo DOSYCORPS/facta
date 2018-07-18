@@ -76,7 +76,7 @@ import ui from './ui.js';
   }
 
   async function newGame() {
-    const problem = await newProblem(100);
+    const problem = await newProblem(200);
     console.log(problem);
     render(Game(problem), document.querySelector('main'));
   }

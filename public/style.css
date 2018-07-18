@@ -2,9 +2,9 @@
   font-size: 12px;
 }
 table {
+  margin: 20% auto;
   transform:rotate(45deg);
   border-spacing: 1rem;
-  margin: 0 auto;
 }
 .cell, 
 .cell > * {

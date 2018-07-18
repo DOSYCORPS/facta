@@ -2,15 +2,34 @@
   const XSS = 'Possible XSS attack warning. Possible object forgery attempt detected. Codes do not match.',
     OBJ = 'Object properties don\'t work here.',
     LAST_ATTR_NAME = /\s+([\w-]+)\s*=\s*"?\s*$/,
-    NEW_TAG = /<[\w]+/,
+    NEW_TAG = /<\w+/g,
     currentKey = Math.random()+'',
-    domCache = {};
+    domCache = {},
+    VOID_ELEMENTS = new Set([
+      "area",
+      "base",
+      "br",
+      "col",
+      "command",
+      "embed",
+      "hr",
+      "img",
+      "input",
+      "keygen",
+      "link",
+      "menuitem",
+      "meta",
+      "param",
+      "source",
+      "track",
+      "wbr"
+    ]);
 
   class Brute {
     constructor(props) {
       props = Object.freeze(props);
       const state = Object.assign({},props);
-      const pin = 'pin' + Math.random();
+      const pin = ('pin' + Math.random()).replace('.','');
       Object.assign(this, {pin,props,state});
     }
 
@@ -45,8 +64,11 @@
   **/
 
 
-  Object.assign(self,{R,render,Brute,domCache});
+  Object.assign(self,{R,render,Brute,domCache,debug:{}});
 
+  function isVoid(name) {
+    return VOID_ELEMENTS.has(name);
+  }
 
   function R (parts, ...vals) {
     parts = [...parts];
@@ -65,21 +87,33 @@
           verify(v,currentKey);
           pinned.push(v);
           domCache[v.pin] = undefined;
-          return R`<span data-pin=${v.pin}></span>`;
+          return R`<span-${v.pin}></span-${v.pin}>`;
         }
         throw {error: OBJ, value: v};
       } else return v === null || v === undefined ? '' : v;
     });
     let hid,
-      hidSaved = false,
+      lastNewTagIndex,
+      lastTagName,
       str = '';
     while (parts.length > 1) {
-      const part = parts.shift(),
-        attrNameMatches = part.match(LAST_ATTR_NAME);
+      let part = parts.shift(),
+        attrNameMatches = part.match(LAST_ATTR_NAME),
+        newTagMatches = part.match(NEW_TAG)
       let val = vals.shift();
-      if (part.match(NEW_TAG)) {
-        hid = `hid_${Math.random()}`;
-        hidSaved = false;
+      if (newTagMatches) {
+        if ( handlers[hid] ) {
+          const before = str.slice(0,lastNewTagIndex);
+          const after = str.slice(lastNewTagIndex);
+          str = before + 
+            `<${lastTagName} id=${hid}>` + 
+            (isVoid(lastTagName) ? '' : `</${lastTagName}>`) + 
+            after;
+        }
+        hid = `hid_${Math.random()}`.replace('.','');
+        const lastTag = newTagMatches[newTagMatches.length-1];
+        lastNewTagIndex = part.indexOf(lastTag) + str.length;
+        lastTagName = lastTag.slice(1);
       }
       if (typeof val === 'function') {
         const attrName = attrNameMatches && attrNameMatches.length > 1
@@ -87,10 +121,8 @@
             : false,
           newPart = part.replace(attrNameMatches[0], '');
         str += attrName ? newPart : part;
-        if (!hidSaved) {
+        if ( !Array.isArray(handlers[hid]) ) {
           handlers[hid] = [];
-          hidSaved = true;
-          str += ` data-hid="${hid}"`;
         }
         handlers[hid].push({eventName: attrName, handler: val});
       } else if (!!val && !!val.handlers && !!val.str) {
@@ -129,7 +161,7 @@
       if ( pinNodes.length ) {
         pinNodes.forEach( rootset => {
           const cloneFrag = frag.cloneNode(true);
-          newPinNodes.push(Array.from(cloneFrag.childNodes));
+          newPinNodes.push([...cloneFrag.childNodes]);
           rootset[0].parentElement.insertBefore(cloneFrag,rootset[0]);
           rootset.forEach( el => el.remove() );
         });
@@ -137,13 +169,13 @@
         if ( Array.isArray(root) ) {
           root.forEach( rootset => {
             const cloneFrag = frag.cloneNode(true);
-            newPinNodes.push(Array.from(cloneFrag.childNodes));
+            newPinNodes.push([...cloneFrag.childNodes]);
             rootset[0].parentElement.insertBefore(cloneFrag,rootset[0]);
             rootset.forEach( el => el.remove() );
           });
         } else if (!!root) {
           const cloneFrag = frag.cloneNode(true);
-          newPinNodes.push(Array.from(cloneFrag.childNodes));
+          newPinNodes.push([...cloneFrag.childNodes]);
           root.parentElement.insertBefore(cloneFrag,root);
           root.remove();
         }
@@ -153,24 +185,25 @@
       root.innerHTML = '';
       root.insertAdjacentHTML('afterBegin', str);
     }
+    const remove = [];
     Object.keys(handlers).forEach(hid => {
-      // again could be optimized
-      // doing the qs takes a long time
-      // it may be be better to prefill these node values somehow
-      const node = document.querySelector(`[data-hid="${hid}"]`),
+      const hidNode = document.getElementById(hid),
+        node = hidNode.nextElementSibling,
         nodeHandlers = handlers[hid];
 
+      remove.push(hidNode);
+
       if (!!node && !!nodeHandlers) {
-        nodeHandlers.forEach(({eventName,handler}) => node.addEventListener(eventName,handler));
+        nodeHandlers.forEach(({eventName,handler}) => {
+          node.addEventListener(eventName,handler);
+        });
       } else throw {error: `Node or handlers could not be found for ${hid}`, hid};
     });
-    pinned.forEach( v => {
-      // could be optimized
-      // build pinned from the nodes already 
-      // since qsa takes a while
-      const locations = Array.from(document.querySelectorAll(`[data-pin="${v.pin}"]`));
-      render(v,locations.map(x => [x]), {replace:true});
-    });
+    remove.forEach( n => n.remove() );
+    for( const v of pinned ) {
+      const locations = [...document.getElementsByTagName(`span-${v.pin}`)].map(x => [x]);
+      render(v,locations, {replace:true});
+    };
   }
 
   function df( t ) {
@@ -231,6 +264,6 @@
   }
 
   function bytes (str) {
-    return Array.from(str).reduce((b,s) => (b.push(...symbytes(s)), b),[]);
+    return [...str].reduce((b,s) => (b.push(...symbytes(s)), b),[]);
   }
 }
