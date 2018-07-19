@@ -163,15 +163,19 @@
     a[2] *= Math.PI+a[3];
     a[3] *= Math.E+a[2];
 
-    return new Uint8Array(a.buffer).reduce((s,b) => s+b.toString(16).padStart(2,'0'));
+    return new Uint8Array(a.buffer).map(b => b.toString(16).padStart(2,'0')).join('');
   }
 
   function symbytes (sym) {
-    return unescape(encodeURIComponent(sym)).split('').map(c => c.codePointAt(0));
+    return [...unescape(encodeURIComponent(sym))].map(c => c.codePointAt(0));
   }
 
   function bytes (str) {
-    return [...str].reduce((b,s) => (b.push(...symbytes(s)), b),[]);
+    const bs = [];
+    for( const s of str ) {
+      bs.push(...symbytes(s)); 
+    }
+    return bs;
   }
 
   function isVoid(tag) {
