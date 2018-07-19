@@ -10,6 +10,7 @@ import ui from './ui.js';
     }
   };
   const makePrime = promisify((bits,cb) => forge.prime.generateProbablePrime(bits,PRIME_OPTS,cb));
+  let currentGame = {};
 
   onload = () => newGame();
 
@@ -21,58 +22,55 @@ import ui from './ui.js';
           const cij = (pi*qj).toString().padStart(2,'0');
           const ten = cij.slice(0,1);
           const unit = cij.slice(1);
-          return R`<td>${new ui.Cell({ten,unit})}</td>`
+          return R`<td>${ui.Cell({ten,unit})}</td>`
         })
       }
       <td><strong>${ni}</strong></td>
     </tr>`;
   }
 
-  class Table extends Brute {
-    constructor(problem) {
-      super(problem);
-      const {p,q,n} = problem;
-      // one extra for the p and q and 1 extra for the n
-      const matrixRows = p.length + 2; 
-      const matrixColumns = q.length + 2;
-      Object.assign(this, {p,q,n,matrixRows,matrixColumns});
-    }
-    render() {
-      const p = this.p.split('').reverse();
-      const q= this.q.split('');
-      const n = this.n.split('').reverse();
-      const nColumn = n.slice(0, p.length);
-      const nRow = n.slice(p.length).reverse().join('').padStart(p.length,'0').split('');
-      const FirstRowQ = R`<tr>
-        <td></td>
-        ${
-          q.map( qi => R`<td><strong>${qi}</strong></td>` )
-        }
-        <td></td>
-      </tr>`;
-      const LastRowN = R`<tr>
-        <td></td>
-        ${
-          nRow.map( ni => R`<td><strong>${ni}</strong></td>` )
-        }
-        <td></td>
-      </tr>`;
-      const Rows = [FirstRowQ];
-      for( let i = 1; i < this.matrixRows - 1; i++ ) {
-        const pi = p[i-1];
-        const ni = nColumn[i-1];
-        const RowLabel = R`<td><strong>${pi}</strong></td>`;
-        const rowi = row(RowLabel,{pi,q,ni});
-        Rows.push(rowi);
+  function Table(problem) {
+    problem = problem || currentGame;
+    let {p,q,n} = problem;
+    // one extra for the p and q and 1 extra for the n
+    const matrixRows = p.length + 2; 
+    const matrixColumns = q.length + 2;
+    currentGame = {p,q,n,matrixRows,matrixColumns};
+    p = currentGame.p.split('').reverse();
+    q= currentGame.q.split('');
+    n = currentGame.n.split('').reverse();
+    const nColumn = n.slice(0, p.length);
+    const nRow = n.slice(p.length).reverse().join('').padStart(p.length,'0').split('');
+    const FirstRowQ = R`<tr>
+      <td></td>
+      ${
+        q.map( qi => R`<td><strong>${qi}</strong></td>` )
       }
-      Rows.push(LastRowN);
-      return R`
-        <table>
-          <tbody>
-            ${Rows}
-          </tbody>
-        </table>
-      `;}
+      <td></td>
+    </tr>`;
+    const LastRowN = R`<tr>
+      <td></td>
+      ${
+        nRow.map( ni => R`<td><strong>${ni}</strong></td>` )
+      }
+      <td></td>
+    </tr>`;
+    const Rows = [FirstRowQ];
+    for( let i = 1; i < currentGame.matrixRows - 1; i++ ) {
+      const pi = p[i-1];
+      const ni = nColumn[i-1];
+      const RowLabel = R`<td><strong>${pi}</strong></td>`;
+      const rowi = row(RowLabel,{pi,q,ni});
+      Rows.push(rowi);
+    }
+    Rows.push(LastRowN);
+    return R`
+      <table>
+        <tbody>
+          ${Rows}
+        </tbody>
+      </table>
+    `;
   }
 
   async function newGame() {
@@ -97,7 +95,7 @@ import ui from './ui.js';
     return R`
       <article>
         <h1>Facta ${problem.bits} bits</h1>
-        ${new Table(problem)}
+        ${Table(problem)}
       </article>
     `;
   }
