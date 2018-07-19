@@ -115,7 +115,7 @@
         });
       } else throw {error: `Node or handlers could not be found for ${hid}`, hid};
     });
-    remove.forEach( n => n.remove() );
+    remove.forEach(n => n.remove());
   }
 
   function join (rs) {
