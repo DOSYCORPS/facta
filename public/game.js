@@ -22,7 +22,8 @@ import ui from './ui.js';
           const cij = (pi*qj).toString().padStart(2,'0');
           const ten = cij.slice(0,1);
           const unit = cij.slice(1);
-          return R`<td>${ui.Cell({ten,unit})}</td>`
+          //return R`<td>${ui.Cell({ten,unit})}</td>`
+          return R`<td>${ui.Cell({ten:"",unit:""})}</td>`
         })
       }
       <td><strong>${ni}</strong></td>
@@ -44,7 +45,7 @@ import ui from './ui.js';
     const FirstRowQ = R`<tr>
       <td></td>
       ${
-        q.map( qi => R`<td><strong>${qi}</strong></td>` )
+        q.map( qj => R`<td><strong>${ui.FactorUnit({unit:"",qj})}</strong></td>` )
       }
       <td></td>
     </tr>`;
@@ -59,7 +60,7 @@ import ui from './ui.js';
     for( let i = 1; i < currentGame.matrixRows - 1; i++ ) {
       const pi = p[i-1];
       const ni = nColumn[i-1];
-      const RowLabel = R`<td><strong>${pi}</strong></td>`;
+      const RowLabel = R`<td><strong>${ui.FactorUnit({unit:"",pi})}</strong></td>`;
       const rowi = row(RowLabel,{pi,q,ni});
       Rows.push(rowi);
     }

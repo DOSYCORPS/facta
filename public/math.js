@@ -100,5 +100,6 @@ export default {
   tens: {
     all: tens,
     by_unit: tens_by_unit
-  }
+  },
+  range
 };
