@@ -1,11 +1,14 @@
 "use strict";
 {
-  const OBJ = "Object properties don't work here.",
-    MARKER = hid => {detail: `Insertion point market not found for ${hid}`, hid},
-    HID = hid => {detail: `Node or handlers not found for recorded hid ${hid}`, hid},
-    LAST_ATTR_NAME = /\s+([\w-]+)\s*=\s*"?\s*$/,
-    NEW_TAG = /<\w+/g,
-    VOID_ELEMENTS = new Set(["area","base","br","col","command","embed","hr","img","input","keygen","link","menuitem","meta","param","source","track","wbr"]);
+  const XSS = "Possible XSS attack warning. Possible object forgery attempt detected. Codes do not match.";
+  const OBJ = "Object properties don't work here.";
+  const MARKER = hid => {detail: `Insertion point market not found for ${hid}`, hid};
+  const HID = hid => {detail: `Node or handlers not found for recorded hid ${hid}`, hid};
+  const LAST_ATTR_NAME = /\s+([\w-]+)\s*=\s*"?\s*$/;
+  const NEW_TAG = /<\w+/g;
+  const currentKey = Math.random()+'';
+  const VOID_ELEMENTS = new Set(["area","base","br","col","command","embed","hr","img","input","keygen",
+    "link","menuitem","meta","param","source","track","wbr"]);
 
   Object.assign(self,{R,render});
 
@@ -17,9 +20,9 @@
     vals = vals.map(parseValue);
 
     while (parts.length > 1) {
-      let part = parts.shift(),
-        attrNameMatches = part.match(LAST_ATTR_NAME),
-        newTagMatches = part.match(NEW_TAG)
+      let part = parts.shift();
+      let attrNameMatches = part.match(LAST_ATTR_NAME);
+      let newTagMatches = part.match(NEW_TAG);
       let val = vals.shift();
       if (newTagMatches) {
         if ( handlers[hid] ) str = markInsertionPoint({str,lastNewTagIndex,lastTagName,hid});
@@ -44,12 +47,14 @@
         str += val;
       } else {
         str += part;
-        str += attrNameMatches ? `"${val}"` : val;
+        str += attrNameMatches ? `"${safe(val)}"` : safe(val);
       }
     }
     if ( handlers[hid] ) str = markInsertionPoint({str,lastNewTagIndex,lastTagName,hid});
     str += parts.shift();
-    return {str,handlers};
+    const o = {str,handlers};
+    o.code = sign(o,currentKey);
+    return o;
   }
 
   function render (r, root, {replace: replace = false} = {}) {
@@ -70,10 +75,13 @@
 
   function join (rs) {
     const H = {},
-      str = rs.map(({str,handlers}) => (Object.assign(H,handlers),str)).join('\n');
+      str = rs.map(({str,handlers,code}) => (
+        verify({str,handlers,code},currentKey),Object.assign(H,handlers),str)).join('\n');
 
     if (str) {
-      return {str,handlers:H};
+      const o = {str,handlers:H};
+      o.code = sign(o,currentKey);
+      return o;
     }
   }
 
@@ -82,7 +90,7 @@
       return join(v) || '';
     } else if (typeof v === 'object' && !!v) {
       if (!!v.str && !!v.handlers) {
-        return v;
+        return verify(v,currentKey) && v;
       }
       throw {error: OBJ, value: v};
     } else return v === null || v === undefined ? '' : v;
@@ -90,6 +98,7 @@
 
   function parseR(r) {
     if (Array.isArray(r) && r.every(val => !!val.str && !!val.handlers)) r = join(r);
+    verify(r,currentKey);
     return r;
   }
 
@@ -116,8 +125,20 @@
     } else throw {error: HID(hid)} 
   }
 
+  function safe (v) {
+    return String(v).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/&/g,'&amp;').replace(/"/g,'&#34;').replace(/'/g,'&#39;');
+  }
+
+  function sign ({str,handlers},key) {
+    return key;
+  }
+
+  function verify ({str,handlers,code},key) {
+    if (sign({str,handlers},key) === code) return true;
+    throw {error: XSS};
+  }
+
   function isVoid(tag) {
     return VOID_ELEMENTS.has(tag.toLowerCase().trim());
   }
 }
-
