@@ -1,5 +1,6 @@
 import {defd,undfd} from './utils.js';
 import math from './math.js';
+import {R} from './r.js';
 
 const cells = {};
 const factors = {};

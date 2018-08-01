@@ -2,6 +2,7 @@
 import math from './math.js';
 import {promisify} from './utils.js';
 import ui from './ui.js';
+import {R} from './r.js';
 {
   const PRIME_OPTS = {
     algorithm: {
@@ -77,7 +78,7 @@ import ui from './ui.js';
   async function newGame() {
     const problem = await newProblem(33);
     console.log(problem);
-    render(Game(problem), document.querySelector('main'));
+    Game(problem).to(document.querySelector('main'), 'replace');
   }
 
   async function newPrimes(bits) {
