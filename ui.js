@@ -6,8 +6,31 @@ const cells = {};
 const factors = {};
 let cellId = 1;
 
-  function Table() {
-    return R`<table></table>`;
+  const HeadRow = ({Q}) => R`<tr class=head>${Q.map((qi,i) => R`<th>${{key:`head=${i}`}}${qi}</th>`)}</tr>`;
+  const InnerRow = ({Q,P,row}) => R`${{key:`inner=${row}`}}
+    <tr>
+      ${Q.map((qi,col) => R`${{key: `innercell=${row}-${col}`}}<td>${P[row]}x${qi}</td>`)}
+    </tr>
+  `;
+    
+
+  function Table(problem) {
+    const {n,p,q} = problem;
+    const N = [...n.toString()];
+    const P = [...p.toString()];
+    const Q = [...q.toString()].reverse();
+    const hr = HeadRow({Q});
+    Object.assign(self,{hr});
+    return R`
+      <table>
+        <thead>
+          ${hr}
+        </thead>
+        <tbody>
+          ${P.map((_,row) => InnerRow({Q,P,row}))}
+        </tbody>
+      </table>
+    `;
   }
 
   function recalculate(state) {
