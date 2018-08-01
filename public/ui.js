@@ -6,6 +6,10 @@ const cells = {};
 const factors = {};
 let cellId = 1;
 
+  function Table() {
+    return R`<table></table>`;
+  }
+
   function recalculate(state) {
     if ( defd(state.unit) && undfd(state.ten) ) {
       state.tens = math.tens.by_unit[state.unit];
@@ -26,7 +30,7 @@ let cellId = 1;
   function resetFactor(e) {
     const props = factors[e.target.closest('.factor-unit').id] || {};
     Object.assign(props,{unit:null});
-    render(FactorUnit(props),document.getElementById(props.cell_id),{replace:true});
+    FactorUnit(props)
   }
 
   function redrawFactor(e) {
@@ -34,52 +38,13 @@ let cellId = 1;
     const props = factors[e.target.closest('.factor-unit').id] || {};
     const {target} = e;
     props.unit = target.value
-    render(FactorUnit(props),document.getElementById(props.cell_id),{replace:true});
-  }
-
-  function FactorUnit(props) {
-    let unit = props.unit;
-    props.unit = props.unit || undefined;
-    props.units = props.units || math.range(0,9);
-    props.cell_id = props.cell_id || cellId++;
-    factors[props.cell_id] = props;
-    return R`
-      <span class="cell factor-unit" id=${props.cell_id}>
-        <button name=reset click=${resetFactor}>X</button>
-        <select name=unit change=${redrawFactor}>
-          <option value="" selected>
-          ${props.units.map(v => R`<option${v==props.unit?' selected':''}>${v}`)}
-        </select>
-      </span>
-    `;
-  }
-
-  function Cell(props) {
-    props.cell_id = props.cell_id || cellId++;
-    cells[props.cell_id] = props;
-    props = recalculate(props);
-    return R`
-      <span class=cell id=${props.cell_id}>
-        <button name=reset click=${reset}>X</button>
-        <br>
-        <a href=#/some-info>Some info</a>
-        <br>
-        <select name=ten change=${redraw}>
-          <option value="" selected>
-          ${props.tens.map(v => R`<option${v==props.ten?' selected':''}>${v}`)}
-        </select>
-        <select name=unit change=${redraw}>
-          <option value="" selected>
-          ${props.units.map(v => R`<option${v==props.unit?' selected':''}>${v}`)}
-        </select>
-      </span>
-    `;
+    FactorUnit(props);
   }
 
   function reset(e) {
     const props = cells[e.target.closest('.cell').id] || {};
     Object.assign(props,{ten:null,unit:null});
-    render(Cell(props),document.getElementById(props.cell_id),{replace:true});
+    Cell(props)
   }
 
   function redraw(e) {
@@ -98,11 +63,11 @@ let cellId = 1;
       const ten = Array.from(parent.ten.children).find( o => o.selected );
       props.ten = ten ? ten.value : null;
     }
-    render(Cell(props),document.getElementById(props.cell_id),{replace:true});
+    Cell(props);
   }
 
   const ui = {
-    Cell, FactorUnit
+    Table
   }
 
   export default ui;
