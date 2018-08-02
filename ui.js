@@ -1,15 +1,15 @@
 import {defd,undfd} from './utils.js';
 import math from './math.js';
-import {R} from './r.js';
+import {R,X} from './r.js';
 
 const cells = {};
 const factors = {};
 let cellId = 1;
 
   const HeadRow = ({Q}) => R`<tr class=head>${Q.map((qi,i) => R`<th>${{key:`head=${i}`}}${qi}</th>`)}</tr>`;
-  const InnerRow = ({Q,P,row}) => R`${{key:`inner=${row}`}}
+  const InnerRow = ({Q,P,row}) => X`${{key:`inner=${row}`}}
     <tr>
-      ${Q.map((qi,col) => R`${{key: `innercell=${row}-${col}`}}<td>${P[row]}x${qi}</td>`)}
+      ${Q.map((qi,col) => X`${{key: `innercell=${row}-${col}`}}<td>${P[row]}x${qi}</td>`)}
     </tr>
   `;
     
