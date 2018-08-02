@@ -6,10 +6,11 @@ const cells = {};
 const factors = {};
 let cellId = 1;
 
-  const HeadRow = ({Q}) => R`<tr class=head>${Q.map((qi,i) => R`<th>${{key:`head=${i}`}}${qi}</th>`)}</tr>`;
-  const InnerRow = ({Q,P,row}) => X`${{key:`inner=${row}`}}
+  const HeadRow = ({Q}) => R`<tr class=head><th></th>${Q.map((qi,i) => X`<th>${qi}</th>`)}</tr>`;
+  const InnerRow = ({Q,P,row}) => R`${{key:`inner=${row}`}}
     <tr>
-      ${Q.map((qi,col) => X`${{key: `innercell=${row}-${col}`}}<td>${P[row]}x${qi}</td>`)}
+      <td><strong>${P[row]}<strong></td>
+      ${Q.map((qi,col) => X`${{key:`inner-${row}-${qi}-${col}`}}<td>${P[row]*qi}</td>`)}
     </tr>
   `;
     
@@ -19,7 +20,9 @@ let cellId = 1;
     const N = [...n.toString()];
     const P = [...p.toString()];
     const Q = [...q.toString()].reverse();
+    console.log(Q);
     const hr = HeadRow({Q});
+    console.log(hr);
     Object.assign(self,{hr});
     return R`
       <table>

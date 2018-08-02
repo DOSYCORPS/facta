@@ -46,6 +46,6 @@ table {
 .cell > a {
   text-align: left;
 }
-td {
+td,th {
   transform: rotate(-45deg);
 }

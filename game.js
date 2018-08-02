@@ -16,7 +16,7 @@ import {R} from './r.js';
   onload = () => newGame();
 
   async function newGame() {
-    const problem = await newProblem(33);
+    const problem = await newProblem(200);
     console.log(problem);
     Game(problem).to(document.querySelector('main'), 'innerHTML');
   }
