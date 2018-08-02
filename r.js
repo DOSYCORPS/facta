@@ -3,7 +3,7 @@
   // That comes later.
 "use strict";
   const DEBUG             = true;
-  const KEYMATCH          = / ?(key\d+) ?/gm;
+  const KEYMATCH          = / ?(?:<!\-\-)? ?(key\d+) ?(?:\-\->)? ?/gm;
   const KEYLEN            = 20;
   const OURPROPS          = 'code,externals,nodes,to,update,v';
   const CODE              = ''+Math.random();
@@ -26,8 +26,7 @@
   const cache = {};
 
   Object.assign(R,{s});
-
-  export {R,X};
+  export {R};
 
   function R(p,...v) {
     v = v.map(parseVal);
@@ -64,36 +63,13 @@
     return retVal;
   }
 
-  function X(p,...v) {
-    v = v.map(parseVal);
-
-    p = [...p]; 
-    const vmap = {};
-    const V = v.map(replaceVal(vmap));
-    const externals = [];
-    let str = '';
-
-    while( p.length > 1 ) str += p.shift() + V.shift();
-    str += p.shift();
-
-    const frag = toDOM(str);
-    const walker = document.createTreeWalker(frag, NodeFilter.SHOW_ALL);
-
-    do {
-      makeUpdaters({walker,vmap,externals});
-    } while(walker.nextNode())
-
-    const retVal = {externals,v:Object.values(vmap),to,
-      update,code:CODE,nodes:[...frag.childNodes]};
-    return retVal;
-  }
-
   function makeUpdaters({walker,vmap,externals}) {
     let node = walker.currentNode;
     switch( node.nodeType ) {
       case Node.ELEMENT_NODE:
         handleElementNode({node,vmap,externals});
       break;
+      case Node.COMMENT_NODE:
       case Node.TEXT_NODE:
         handleTextNode({node,vmap,externals});
       break;
@@ -104,7 +80,7 @@
 
   function handleTextNode({node,vmap,externals}) {
     const lengths = [];
-    const text = node.wholeText; 
+    const text = node.nodeValue; 
     let result;
     while( result = KEYMATCH.exec(text) ) {
       const {index} = result;
@@ -214,7 +190,6 @@
     } else {
       return (newVal) => {
         const originalLengthBefore = Object.keys(lengths.slice(0,valIndex)).length*KEYLEN;
-        lengths[valIndex] = newVal.length;
         val.val = newVal;
         switch(typeof newVal) {
           case "function":
@@ -235,7 +210,9 @@
             oldVal = newVal;
           break;
           default:
+            lengths[valIndex] = newVal.length;
             const attr = node.getAttribute(name);
+            console.log(attr);
             if ( attr !== newVal ) {
               const lengthBefore = lengths.slice(0,valIndex).reduce((sum,x) => sum + x, 0);
 
@@ -294,8 +271,13 @@
       if ( !! val.key ) {
         return '';
       }
-      const k = (' key'+Math.random()+' ').replace('.','').padEnd(KEYLEN,'0').slice(0,KEYLEN);
-      vmap[k.trim()] = {vi,val,replacers:[]};
+      const key = (' key'+Math.random()).replace('.','').padEnd(KEYLEN,'0').slice(0,KEYLEN);
+      let k = key;
+      if ( onlyOurProps(val) && verify(val) ) {
+        k = (`<!--${k}-->`);
+      }
+      k = `${k} `;
+      vmap[key.trim()] = {vi,val,replacers:[]};
       return k;
     };
   }
